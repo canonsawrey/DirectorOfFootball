@@ -16,27 +16,27 @@ const PlayerSchema = new mongoose.Schema({
     required: true
   },
   pace: {
-    type: Integer,
+    type: Number,
     default: 99
   },
   shot: {
-    type: Integer,
+    type: Number,
     default: 99
   },
   pass: {
-    type: Integer,
+    type: Number,
     default: 99
   },
   dribble: {
-    type: Integer,
+    type: Number,
     default: 99
   },
   phys: {
-    type: Integer,
+    type: Number,
     default: 99
   },
   def: {
-    type: Integer,
+    type: Number,
     default: 99
   }
 });
