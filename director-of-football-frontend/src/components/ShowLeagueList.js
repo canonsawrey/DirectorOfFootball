@@ -35,12 +35,12 @@ class ShowLeagueList extends Component {
       leagueList = "there is no player record!";
     } else {
       leagueList = leagues.map((league, k) =>
-        <LeagueRow player={league} key={k} />
+        <LeagueRow league={league} key={k} />
       );
     }
 
     return (
-      <div className="ShowPlayerList">
+      <div className="ShowLeagueList">
         <div className="container">
           <div className="row">
             <div className="col-md-12">

@@ -22,7 +22,8 @@ class CreateLeague extends Component {
 
     const data = {
       name: this.state.name,
-      description: this.state.description
+      description: this.state.description,
+      in_progress: false
     };
 
     axios

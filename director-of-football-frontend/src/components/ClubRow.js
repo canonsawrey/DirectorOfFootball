@@ -2,18 +2,18 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import '../App.css';
 
-const LeagueRow = (props) => {
-    const league  = props.league;
+const ClubRow = (props) => {
+    const club  = props.club;
 
     return(
         <div className="row-container">
-          <Link to={`/show-league/${league._id}`}>
+          <Link to={`/show-club/${club._id}`}>
               <div>
                   <h2>
-                    { league.name }
+                    { club.name }
                   </h2>
                   <h4>
-                    { league.description ? league.description : '-'}
+                    { club.city + ', ' + club.country }
                   </h4>
                 </div>
             </Link>
@@ -21,4 +21,4 @@ const LeagueRow = (props) => {
     )
 };
 
-export default LeagueRow;
+export default ClubRow;
