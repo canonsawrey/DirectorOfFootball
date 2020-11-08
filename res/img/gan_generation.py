@@ -1,3 +1,10 @@
+from torchvision import transforms, datasets
+import torch
+import matplotlib.pyplot as plt
+import numpy as np
+from torch import nn, optim
+import torch.nn.functional as F
+
 def get_dataloader(batch_size, image_size, data_dir='train/'):
     """
     Batch the neural network data using DataLoader
@@ -12,15 +19,18 @@ def get_dataloader(batch_size, image_size, data_dir='train/'):
 
     dataloader = torch.utils.data.DataLoader(dataset = dataset,batch_size = batch_size,shuffle = True)
     return dataloader
+
 # Define function hyperparameters
 batch_size = 256
 img_size = 32
 # Call your function and get a dataloader
 celeba_train_loader = get_dataloader(batch_size, img_size)
+train_on_gpu = 0;
 
 def imshow(img):
     npimg = img.numpy()
     plt.imshow(np.transpose(npimg, (1, 2, 0)))
+
 # obtain one batch of training images
 dataiter = iter(celeba_train_loader)
 images, _ = dataiter.next() # _ for no labels
@@ -51,20 +61,21 @@ def conv(input_c,output,kernel_size,stride = 2,padding  = 1, batch_norm = True):
         layers.append(nn.BatchNorm2d(output))
 
     return nn.Sequential(*layers)
+
 class Discriminator(nn.Module):
-def __init__(self, conv_dim):
+    def __init__(self, conv_dim):
         """
         Initialize the Discriminator Module
         :param conv_dim: The depth of the first convolutional layer
         """
         #complete init function
-super(Discriminator, self).__init__()
+        super(Discriminator, self).__init__()
         self.conv_dim = conv_dim
         self.layer_1 = conv(3,conv_dim,4,batch_norm = False) #16
         self.layer_2 = conv(conv_dim,conv_dim*2,4) #8
         self.layer_3 = conv(conv_dim*2,conv_dim*4,4) #4
         self.fc = nn.Linear(conv_dim*4*4*4,1)
-def forward(self, x):
+    def forward(self, x):
         """
         Forward propagation of the neural network
         :param x: The input to the neural network
@@ -86,6 +97,7 @@ def deconv(input_c,output,kernel_size,stride = 2, padding =1, batch_norm = True)
     if batch_norm:
         layers.append(nn.BatchNorm2d(output))
     return nn.Sequential(*layers)
+
 class Generator(nn.Module):
 
     def __init__(self, z_size, conv_dim):
@@ -118,6 +130,7 @@ class Generator(nn.Module):
         x = F.relu(self.layer_3(x))
         x = torch.tanh(self.layer_4(x))
         return x
+
 def weights_init_normal(m):
     """
     Applies initial weights to certain layers in a model .
@@ -144,7 +157,7 @@ def build_network(d_conv_dim, g_conv_dim, z_size):
 # initialize model weights
     D.apply(weights_init_normal)
     G.apply(weights_init_normal)
-print(D)
+    print(D)
     print()
     print(G)
 
@@ -155,3 +168,111 @@ d_conv_dim = 64
 g_conv_dim = 64
 z_size = 100
 D, G = build_network(d_conv_dim, g_conv_dim, z_size)
+
+
+def real_loss(D_out):
+    '''Calculates how close discriminator outputs are to being real.
+       param, D_out: discriminator logits
+       return: real loss'''
+    batch_size = D_out.size(0)
+    labels = torch.ones(batch_size)
+    if train_on_gpu:
+        labels = labels.cuda()
+    criterion = nn.BCEWithLogitsLoss()
+    loss = criterion(D_out.squeeze(),labels)
+    return loss
+def fake_loss(D_out):
+    '''Calculates how close discriminator outputs are to being fake.
+       param, D_out: discriminator logits
+       return: fake loss'''
+    batch_size = D_out.size(0)
+    labels = torch.zeros(batch_size)
+    if train_on_gpu:
+        labels = labels.cuda()
+    criterion =  nn.BCEWithLogitsLoss()
+    loss = criterion(D_out.squeeze(),labels)
+    return loss
+
+# Create optimizers for the discriminator D and generator G
+d_optimizer = optim.Adam(D.parameters(),lr = .0002, betas = [0.5,0.999])
+g_optimizer = optim.Adam(G.parameters(),lr = .0002, betas = [0.5,0.999])
+
+def train(D, G, n_epochs, print_every=5):
+    '''Trains adversarial networks for some number of epochs
+       param, D: the discriminator network
+       param, G: the generator network
+       param, n_epochs: number of epochs to train for
+       param, print_every: when to print and record the models' losses
+       return: D and G losses'''
+
+    # move models to GPU
+    if train_on_gpu:
+        D.cuda()
+        G.cuda()
+    # keep track of loss and generated, "fake" samples
+    samples = []
+    losses = []
+    # Get some fixed data for sampling. These are images that are held
+    # constant throughout training, and allow us to inspect the model's performance
+    sample_size=16
+    fixed_z = np.random.uniform(-1, 1, size=(sample_size, z_size))
+    fixed_z = torch.from_numpy(fixed_z).float()
+    # move z to GPU if available
+    if train_on_gpu:
+        fixed_z = fixed_z.cuda()
+# epoch training loop
+    for epoch in range(n_epochs):
+# batch training loop
+        for batch_i, (real_images, _) in enumerate(celeba_train_loader):
+            batch_size = real_images.size(0)
+            real_images = scale(real_images)
+            if train_on_gpu:
+                real_images = real_images.cuda()
+
+            # 1. Train the discriminator on real and fake ima.ges
+            d_optimizer.zero_grad()
+            d_out_real = D(real_images)
+            z = np.random.uniform(-1,1,size = (batch_size,z_size))
+            z = torch.from_numpy(z).float()
+            if train_on_gpu:
+                z = z.cuda()
+            d_loss = real_loss(d_out_real) + fake_loss(D(G(z)))
+            d_loss.backward()
+            d_optimizer.step()
+            # 2. Train the generator with an adversarial loss
+            G.train()
+            g_optimizer.zero_grad()
+            z = np.random.uniform(-1,1,size = (batch_size,z_size))
+            z = torch.from_numpy(z).float()
+            if train_on_gpu:
+                z = z.cuda()
+            g_loss = real_loss(D(G(z)))
+            g_loss.backward()
+            g_optimizer.step()
+
+            # Print some loss stats
+            if batch_i % print_every == 0:
+                # append discriminator loss and generator loss
+                losses.append((d_loss.item(), g_loss.item()))
+                # print discriminator and generator loss
+                print('Epoch [{:5d}/{:5d}] | d_loss: {:6.4f} | g_loss: {:6.4f}'.format(
+                        epoch+1, n_epochs, d_loss.item(), g_loss.item()))
+        ## AFTER EACH EPOCH##
+        # this code assumes your generator is named G, feel free to change the name
+        # generate and save sample, fake images
+        G.eval() # for generating samples
+        samples_z = G(fixed_z)
+        samples.append(samples_z)
+        G.train() # back to training mode
+    # Save training generator samples
+    with open('train_samples.pkl', 'wb') as f:
+        pkl.dump(samples, f)
+
+    # finally return losses
+    return losses
+
+
+# set number of epochs
+n_epochs = 40
+# call training function
+losses = train(D, G, n_epochs=n_epochs)
