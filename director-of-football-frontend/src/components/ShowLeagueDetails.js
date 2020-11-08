@@ -29,6 +29,7 @@ class ShowLeagueDetails extends Component {
 
   render() {
     const league = this.state.league;
+    console.log(this.state.league)
 
     let clubList;
     if(!league.clubs) {

@@ -4,6 +4,8 @@ import '../App.css';
 
 const ClubRow = (props) => {
     const club  = props.club;
+    console.log(club);
+    
 
     return(
         <div className="row-container">
