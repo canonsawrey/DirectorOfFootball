@@ -282,7 +282,7 @@ def train(D, G, n_epochs, print_every=5):
 
 
 # set number of epochs
-n_epochs = 5 # TODO Bump this up, was 40
+n_epochs = 10 # TODO Bump this up, was 40
 # call training function
 losses = train(D, G, n_epochs=n_epochs)
 
@@ -293,6 +293,9 @@ while True: #TODO make this standard
     sample_size = 16
     fixed_z = np.random.uniform(-1, 1, size=(sample_size, z_size))
     fixed_z = torch.from_numpy(fixed_z).float()
+    # move z to GPU if available
+    if train_on_gpu:
+        fixed_z = fixed_z.cuda()
     sample = G(fixed_z)
     fig, axes = plt.subplots(figsize=(16,4), nrows=2, ncols=8, sharey=True, sharex=True)
     for ax, img in zip(axes.flatten(), sample):
@@ -308,6 +311,7 @@ while True: #TODO make this standard
         image.save('./gen/generated_'  + str(save_num))
         save_num += 1
 
+sys.exit()
 
 # helper function for viewing a list of passed in sample images
 def view_samples(epoch, samples):
