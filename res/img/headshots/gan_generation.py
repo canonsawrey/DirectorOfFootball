@@ -16,7 +16,7 @@ def get_dataloader(batch_size, image_size, data_dir='train/'):
     :param data_dir: Directory where image data is located
     :return: DataLoader with batched data
     """
-    transform = transforms.Compose([transforms.Resize(image_size),transforms.CenterCrop(image_size),transforms.ToTensor()])
+    transform = transforms.Compose([transforms.CenterCrop(90), transforms.Resize(image_size), transforms.CenterCrop(image_size), transforms.ToTensor()])
 
     dataset = datasets.ImageFolder(data_dir,transform = transform)
 
@@ -24,7 +24,7 @@ def get_dataloader(batch_size, image_size, data_dir='train/'):
     return dataloader
 
 # Define function hyperparameters
-batch_size = 32  # TODO bump this up (Was 256)
+batch_size = 256
 img_size = 32
 # Call your function and get a dataloader
 train_loader = get_dataloader(batch_size, img_size)
@@ -274,7 +274,7 @@ def train(D, G, n_epochs, print_every=5):
         samples.append(samples_z)
         G.train() # back to training mode
     # Save training generator samples
-    with open('train_samples.pkl', 'wb') as f:
+    12`+--with open('train_samples.pkl', 'wb') as f:
         pkl.dump(samples, f)
 
     # finally return losses
@@ -282,7 +282,7 @@ def train(D, G, n_epochs, print_every=5):
 
 
 # set number of epochs
-n_epochs = 10 # TODO Bump this up, was 40
+n_epochs = 1
 # call training function
 losses = train(D, G, n_epochs=n_epochs)
 
